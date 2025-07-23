@@ -1,0 +1,302 @@
+﻿<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BookCatalogApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/BookCatalogApp.styles.css" asp-append-version="true" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-primary border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Items" asp-action="Index">
+                    <i class="fas fa-book-reader me-2"></i>BookCatalogApp
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Dashboard" asp-action="Index">
+                                <i class="fas fa-chart-pie me-1"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Items" asp-action="Index">
+                                <i class="fas fa-list me-1"></i>Všechny položky
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Items" asp-action="Create">
+                                <i class="fas fa-plus me-1"></i>Přidat novou
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-filter me-1"></i>Filtrovat podle typu
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" asp-area="" asp-controller="Items" asp-action="Index" asp-route-mediaTypeId="1">
+                                        <i class="fas fa-book me-2 text-primary"></i>Knihy
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-area="" asp-controller="Items" asp-action="Index" asp-route-mediaTypeId="2">
+                                        <i class="fas fa-compact-disc me-2 text-success"></i>CD
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-area="" asp-controller="Items" asp-action="Index" asp-route-mediaTypeId="3">
+                                        <i class="fas fa-film me-2 text-warning"></i>DVD
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-area="" asp-controller="Items" asp-action="Index" asp-route-showOnlyBorrowed="true">
+                                        <i class="fas fa-hand-holding me-2 text-danger"></i>Pouze půjčené
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-tools me-1"></i>Nástroje
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="toggleDarkMode()">
+                                        <i class="fas fa-moon me-2"></i>Dark Mode
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="showKeyboardShortcuts()">
+                                        <i class="fas fa-keyboard me-2"></i>Klávesové zkratky
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="exportAllData()">
+                                        <i class="fas fa-download me-2"></i>Export dat
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <!-- Vyhledávací box v navigaci -->
+                    <div class="d-flex">
+                        <form class="d-flex me-3" asp-controller="Items" asp-action="Index" method="get">
+                            <input class="form-control form-control-sm me-2" type="search" name="searchTerm"
+                                   placeholder="Rychlé vyhledávání..." aria-label="Search" style="width: 200px;">
+                            <button class="btn btn-outline-light btn-sm" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container-fluid">
+            <div class="row py-3">
+                <div class="col-md-6">
+                    &copy; 2025 - BookCatalogApp - Evidence knih, CD a DVD
+                </div>
+                <div class="col-md-6 text-end">
+                    <small>
+                        <i class="fas fa-code me-1"></i>Vytvořeno pro ZAT test
+                        <span class="ms-3">
+                            <i class="fas fa-keyboard me-1"></i>
+                            <kbd>Ctrl+D</kbd> Dashboard |
+                            <kbd>Ctrl+L</kbd> Seznam |
+                            <kbd>Ctrl+N</kbd> Nová položka
+                        </span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal pro klávesové zkratky -->
+    <div class="modal fade" id="keyboardShortcutsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-keyboard me-2"></i>Klávesové zkratky
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Navigace</h6>
+                            <ul class="list-unstyled">
+                                <li><kbd>Ctrl + D</kbd> - Dashboard</li>
+                                <li><kbd>Ctrl + L</kbd> - Seznam položek</li>
+                                <li><kbd>Ctrl + N</kbd> - Nová položka</li>
+                                <li><kbd>Ctrl + F</kbd> - Vyhledávání</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Akce</h6>
+                            <ul class="list-unstyled">
+                                <li><kbd>Ctrl + S</kbd> - Uložit formulář</li>
+                                <li><kbd>Esc</kbd> - Zavřít modal</li>
+                                <li><kbd>Ctrl + M</kbd> - Dark Mode</li>
+                                <li><kbd>F5</kbd> - Obnovit stránku</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Global JavaScript pro celou aplikaci -->
+    <script>
+        // Global Dark Mode Function
+        function toggleDarkMode() {
+            const body = document.body;
+            const isDarkMode = body.classList.contains('dark-mode');
+
+            if (isDarkMode) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'disabled');
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'enabled');
+            }
+        }
+
+        // Load Dark Mode on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+            }
+        });
+
+        // Show Keyboard Shortcuts Modal
+        function showKeyboardShortcuts() {
+            const modal = new bootstrap.Modal(document.getElementById('keyboardShortcutsModal'));
+            modal.show();
+        }
+
+        // Export All Data Function
+        function exportAllData() {
+            // Placeholder - implementace v budoucí verzi
+            alert('Export funkcionalita bude implementována v budoucí verzi.');
+        }
+
+        // Global Keyboard Shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + D for Dashboard
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Index", "Dashboard")';
+            }
+            // Ctrl + L for List
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Index", "Items")';
+            }
+            // Ctrl + N for New Item
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Create", "Items")';
+            }
+            // Ctrl + F for Focus Search
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                const searchInput = document.querySelector('input[name="searchTerm"]');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+            // Ctrl + M for Dark Mode
+            if (e.ctrlKey && e.key === 'm') {
+                e.preventDefault();
+                toggleDarkMode();
+            }
+            // ? for Help (Keyboard Shortcuts)
+            if (e.key === '?' && !e.ctrlKey && !e.altKey) {
+                e.preventDefault();
+                showKeyboardShortcuts();
+            }
+        });
+
+        // Toast notifications helper
+        function showToast(message, type = 'success') {
+            const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+            const toastId = 'toast-' + Date.now();
+
+            const toastHTML = `
+                <div id="${toastId}" class="toast show" role="alert">
+                    <div class="toast-header bg-${type} text-white">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                        <strong class="me-auto">${type === 'success' ? 'Úspěch' : 'Upozornění'}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                const toast = document.getElementById(toastId);
+                if (toast) {
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.hide();
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, 5000);
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // Loading indicator helper
+        function showLoading(button) {
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Načítání...';
+            }
+        }
+
+        function hideLoading(button, originalText) {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

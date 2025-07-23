@@ -1,0 +1,222 @@
+﻿@model BookCatalogApp.Models.Entities.Item
+@{
+    ViewData["Title"] = "Upravit položku";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1><i class="fas fa-edit me-2"></i>Upravit položku</h1>
+            <p class="text-muted">Úprava údajů o položce: <strong>@Model.Title</strong></p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                <i class="fas fa-eye me-1"></i>Zobrazit detail
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Zpět na seznam
+            </a>
+        </div>
+    </div>
+
+    <form asp-action="Edit" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="CreatedAt" type="hidden" />
+
+        <div class="row">
+            <!-- Základní informace -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Základní informace
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Title" class="form-label"></label>
+                                <input asp-for="Title" class="form-control" />
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Author" class="form-label"></label>
+                                <input asp-for="Author" class="form-control" />
+                                <span asp-validation-for="Author" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MediaTypeId" class="form-label"></label>
+                                <select asp-for="MediaTypeId" asp-items="ViewBag.MediaTypes" class="form-select">
+                                    <option value="">Vyberte typ média...</option>
+                                </select>
+                                <span asp-validation-for="MediaTypeId" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="PurchaseDate" class="form-label"></label>
+                                <input asp-for="PurchaseDate" class="form-control" type="date" />
+                                <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label"></label>
+                                <textarea asp-for="Description" rows="4" class="form-control"
+                                          placeholder="Volitelný popis položky..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informace o půjčování -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exchange-alt me-2"></i>Správa půjčování
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.IsBorrowed)
+                        {
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-user-clock me-1"></i>Aktuálně půjčeno
+                                </h6>
+                                <p class="mb-2">
+                                    <strong>Půjčeno:</strong> @Model.BorrowerName<br>
+                                    <strong>Od:</strong> @Model.BorrowDate?.ToString("dd.MM.yyyy")
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-success">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-check-circle me-1"></i>Dostupné
+                                </h6>
+                                <p class="mb-0">Položka není aktuálně půjčená.</p>
+                            </div>
+                        }
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="BorrowerName" class="form-label"></label>
+                                <input asp-for="BorrowerName" class="form-control"
+                                       placeholder="Jméno půjčujícího (prázdné = není půjčeno)" />
+                                <span asp-validation-for="BorrowerName" class="text-danger"></span>
+                                <div class="form-text">
+                                    Pokud chcete položku vrátit, smažte jméno půjčujícího.
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="BorrowDate" class="form-label"></label>
+                                <input asp-for="BorrowDate" class="form-control" type="date" />
+                                <span asp-validation-for="BorrowDate" class="text-danger"></span>
+                                <div class="form-text">
+                                    Datum kdy byla položka půjčena.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info me-2"></i>Metadata
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-plus me-1"></i><strong>Přidáno:</strong><br>
+                                @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-hashtag me-1"></i><strong>ID položky:</strong> @Model.Id
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tlačítka pro akce -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <a asp-action="Index" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-times me-1"></i>Zrušit úpravy
+                                </a>
+                                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                                    <i class="fas fa-eye me-1"></i>Zobrazit detail
+                                </a>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-save me-1"></i>Uložit změny
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong class="me-auto">Úspěch</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">@TempData["SuccessMessage"]</div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                setTimeout(function() {
+                    var bsToast = new bootstrap.Toast(toast);
+                    bsToast.hide();
+                }, 5000);
+            });
+
+            const borrowerNameInput = document.querySelector('input[name="BorrowerName"]');
+            const borrowDateInput = document.querySelector('input[name="BorrowDate"]');
+
+            if (borrowerNameInput && borrowDateInput) {
+                borrowerNameInput.addEventListener('input', function() {
+                    if (this.value.trim() === '') {
+                        borrowDateInput.value = '';
+                    } else if (borrowDateInput.value === '') {
+                        borrowDateInput.value = new Date().toISOString().split('T')[0];
+                    }
+                });
+            }
+        });
+    </script>
+}

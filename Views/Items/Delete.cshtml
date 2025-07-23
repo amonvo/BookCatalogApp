@@ -1,0 +1,217 @@
+﻿@model BookCatalogApp.Models.Entities.Item
+@{
+    ViewData["Title"] = "Smazat položku";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="text-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>Smazat položku
+            </h1>
+            <p class="text-muted">
+                Opravdu chcete smazat tuto položku? <strong>Tato akce je nevratná!</strong>
+            </p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                <i class="fas fa-eye me-1"></i>Zobrazit detail
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Zpět na seznam
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Náhled mazané položky -->
+        <div class="col-lg-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                    <span class="badge bg-light text-dark fs-6">
+                        <i class="@Model.MediaType.IconClass me-2"></i>@Model.MediaType.Name
+                    </span>
+                    @if (Model.IsBorrowed)
+                    {
+                        <span class="badge bg-warning text-dark fs-6">
+                            <i class="fas fa-hand-holding me-1"></i>Půjčeno
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-check me-1"></i>Dostupné
+                        </span>
+                    }
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title text-danger mb-3">@Model.Title</h3>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong><i class="fas fa-user me-1"></i>Autor/Režisér:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            @(string.IsNullOrEmpty(Model.Author) ? "Neuvedeno" : Model.Author)
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong><i class="fas fa-tag me-1"></i>Typ média:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            <span class="badge bg-@Model.MediaType.ColorClass">
+                                <i class="@Model.MediaType.IconClass me-1"></i>@Model.MediaType.Name
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (Model.PurchaseDate.HasValue)
+                    {
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong><i class="fas fa-calendar me-1"></i>Datum pořízení:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                @Model.PurchaseDate.Value.ToString("dd.MM.yyyy")
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong><i class="fas fa-align-left me-1"></i>Popis:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="mb-0 bg-light p-2 rounded">@Model.Description</p>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.IsBorrowed)
+                    {
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Pozor - položka je půjčená!
+                            </h6>
+                            <p class="mb-2">
+                                <strong>Půjčeno komu:</strong> @Model.BorrowerName<br>
+                                <strong>Datum půjčení:</strong> @Model.BorrowDate?.ToString("dd.MM.yyyy")
+                            </p>
+                            <p class="mb-0">
+                                <small>Doporučujeme nejprve vrátit položku před smazáním pro lepší evidenci.</small>
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Potvrzovací panel -->
+        <div class="col-lg-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trash me-2"></i>Potvrzení smazání
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-circle me-1"></i>Varování!
+                        </h6>
+                        <p class="mb-0">
+                            Smazání položky je <strong>nevratné</strong>.
+                            Všechny údaje o této položce budou trvale ztraceny.
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Co bude smazáno:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-danger me-1"></i>Název a autor</li>
+                            <li><i class="fas fa-check text-danger me-1"></i>Všechny metadata</li>
+                            <li><i class="fas fa-check text-danger me-1"></i>Historie půjčování</li>
+                            <li><i class="fas fa-check text-danger me-1"></i>Popis a poznámky</li>
+                        </ul>
+                    </div>
+
+                    <!-- Formulář pro potvrzení smazání -->
+                    <form asp-action="Delete" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg" id="deleteButton">
+                                <i class="fas fa-trash me-1"></i>Ano, smazat trvale
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="d-grid gap-2">
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                            <i class="fas fa-times me-1"></i>Ne, zrušit mazání
+                        </a>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Zpět na seznam
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiky -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Informace o položce
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="fas fa-hashtag me-1"></i><strong>ID:</strong> @Model.Id<br>
+                            <i class="fas fa-calendar-plus me-1"></i><strong>V evidenci:</strong>
+                            @((DateTime.Now - Model.CreatedAt).Days) dní<br>
+                            <i class="fas fa-exchange-alt me-1"></i><strong>Stav:</strong>
+                            @(Model.IsBorrowed ? "Půjčeno" : "Dostupné")
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButton = document.getElementById('deleteButton');
+            let countdown = 5;
+
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = '<i class="fas fa-clock me-1"></i>Počkejte ' + countdown + 's...';
+
+            const countdownInterval = setInterval(function() {
+                countdown--;
+                if (countdown > 0) {
+                    deleteButton.innerHTML = '<i class="fas fa-clock me-1"></i>Počkejte ' + countdown + 's...';
+                } else {
+                    clearInterval(countdownInterval);
+                    deleteButton.disabled = false;
+                    deleteButton.innerHTML = '<i class="fas fa-trash me-1"></i>Ano, smazat trvale';
+                    deleteButton.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.3)';
+                }
+            }, 1000);
+
+            deleteButton.closest('form').addEventListener('submit', function(e) {
+                if (!confirm('POSLEDNÍ VAROVÁNÍ: Opravdu chcete trvale smazat tuto položku? Tato akce je nevratná!')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+}

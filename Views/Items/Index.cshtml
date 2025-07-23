@@ -1,0 +1,177 @@
+﻿@model IEnumerable<BookCatalogApp.Models.Entities.Item>
+@{
+    ViewData["Title"] = "Evidence knih, CD a DVD";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1><i class="fas fa-list me-2"></i>Evidence knih, CD a DVD</h1>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Přidat novou položku
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtrovací panel -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtrování a vyhledávání</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="mediaTypeId" class="form-label">Typ média</label>
+                    <select name="mediaTypeId" id="mediaTypeId" class="form-select">
+                        <option value="">Všechny typy</option>
+                        @foreach (var mediaType in ViewBag.MediaTypes as SelectList)
+                        {
+                            <option value="@mediaType.Value" selected="@(mediaType.Value == ViewBag.CurrentMediaType?.ToString())">
+                                @mediaType.Text
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="searchTerm" class="form-label">Vyhledávání</label>
+                    <input type="text" name="searchTerm" id="searchTerm" value="@ViewBag.SearchTerm"
+                           class="form-control" placeholder="Název nebo autor...">
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check mt-4 pt-2">
+                        <input type="checkbox" name="showOnlyBorrowed" value="true"
+                               checked="@(ViewBag.ShowOnlyBorrowed == true)"
+                               class="form-check-input" id="showOnlyBorrowed">
+                        <label class="form-check-label" for="showOnlyBorrowed">
+                            Pouze půjčené položky
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary mt-4 w-100">
+                        <i class="fas fa-search me-1"></i>Filtrovat
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Seznam položek -->
+    @if (Model.Any())
+    {
+        <div class="row">
+            @foreach (var item in Model)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 @(item.IsBorrowed ? "border-warning" : "")">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="badge bg-@item.MediaType.ColorClass">
+                                <i class="@item.MediaType.IconClass me-1"></i>@item.MediaType.Name
+                            </span>
+                            @if (item.IsBorrowed)
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-hand-holding me-1"></i>Půjčeno
+                                </span>
+                            }
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">@item.Title</h5>
+                            @if (!string.IsNullOrEmpty(item.Author))
+                            {
+                                <p class="card-text text-muted mb-2">
+                                    <i class="fas fa-user me-1"></i>@item.Author
+                                </p>
+                            }
+                            @if (item.PurchaseDate.HasValue)
+                            {
+                                <p class="card-text mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>Pořízeno: @item.PurchaseDate.Value.ToString("dd.MM.yyyy")
+                                    </small>
+                                </p>
+                            }
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <p class="card-text small">
+                                    @(item.Description.Length > 100 ? item.Description.Substring(0, 100) + "..." : item.Description)
+                                </p>
+                            }
+                            @if (item.IsBorrowed)
+                            {
+                                <div class="alert alert-warning alert-sm mt-2">
+                                    <small>
+                                        <i class="fas fa-user-clock me-1"></i><strong>Půjčeno:</strong> @item.BorrowerName<br>
+                                        <i class="fas fa-calendar me-1"></i><strong>Od:</strong> @item.BorrowDate?.ToString("dd.MM.yyyy")
+                                    </small>
+                                </div>
+                            }
+                            <div class="mt-auto">
+                                <div class="btn-group w-100" role="group">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-eye me-1"></i>Detail
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-edit me-1"></i>Upravit
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-sm"
+                                       onclick="return confirm('Opravdu chcete smazat tuto položku?')">
+                                        <i class="fas fa-trash me-1"></i>Smazat
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-search fa-4x text-muted"></i>
+            </div>
+            <h4 class="text-muted">Žádné položky nenalezeny</h4>
+            <p class="text-muted mb-4">
+                @if (!string.IsNullOrEmpty(ViewBag.SearchTerm?.ToString()) || ViewBag.CurrentMediaType != null || ViewBag.ShowOnlyBorrowed == true)
+                {
+                    <text>Zkuste změnit filtrovací kritéria nebo</text>
+                }
+            </p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Přidat první položku
+            </a>
+        </div>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong class="me-auto">Úspěch</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">@TempData["SuccessMessage"]</div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                setTimeout(function() {
+                    var bsToast = new bootstrap.Toast(toast);
+                    bsToast.hide();
+                }, 5000);
+            });
+        });
+    </script>
+}

@@ -1,0 +1,428 @@
+﻿@model BookCatalogApp.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard - Přehled evidence";
+}
+
+<div class="container-fluid">
+    <!-- Header s přepínačem Dark Mode -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1><i class="fas fa-chart-pie me-2"></i>Dashboard - Přehled evidence</h1>
+            <p class="text-muted">Komplexní analýza vaší knihovny</p>
+        </div>
+        <div class="col-auto">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="darkModeToggle">
+                <label class="form-check-label" for="darkModeToggle">
+                    <i class="fas fa-moon me-1"></i>Dark Mode
+                </label>
+            </div>
+            <a asp-controller="Items" asp-action="Index" class="btn btn-outline-primary">
+                <i class="fas fa-list me-1"></i>Zpět na seznam
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistické karty -->
+    <div class="row mb-4" id="stats-cards">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stats bg-primary text-white">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-8">
+                            <h5 class="card-title">Celkem položek</h5>
+                            <h2 class="mb-0">@Model.TotalItems</h2>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-books fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stats bg-success text-white">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-8">
+                            <h5 class="card-title">Dostupné</h5>
+                            <h2 class="mb-0">@Model.AvailableItems</h2>
+                            <small>@Model.AvailabilityRate.ToString("F1")%</small>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stats bg-warning text-white">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-8">
+                            <h5 class="card-title">Půjčené</h5>
+                            <h2 class="mb-0">@Model.BorrowedItems</h2>
+                            <small>@Model.BorrowingRate.ToString("F1")%</small>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-hand-holding fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stats bg-info text-white">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-8">
+                            <h5 class="card-title">Typy médií</h5>
+                            <h2 class="mb-0">3</h2>
+                            <small>Knihy, CD, DVD</small>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-layer-group fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafy -->
+    <div class="row mb-4">
+        <!-- Graf podle typů médií -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-doughnut me-2"></i>Rozdělení podle typů médií
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="mediaTypeChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graf půjčených vs dostupných -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Stav půjčování
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="borrowingChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailní tabulky -->
+    <div class="row">
+        <!-- Nejpůjčovanější položky -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>Aktuálně půjčené položky
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.MostBorrowedItems.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Název</th>
+                                        <th>Typ</th>
+                                        <th>Autor</th>
+                                        <th>Akce</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.MostBorrowedItems)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@item.Title</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-@item.MediaType.ColorClass">
+                                                    <i class="@item.MediaType.IconClass me-1"></i>
+                                                    @item.MediaType.Name
+                                                </span>
+                                            </td>
+                                            <td>@item.Author</td>
+                                            <td>
+                                                <a asp-controller="Items" asp-action="Details" asp-route-id="@item.Id"
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>Žádné položky nejsou aktuálně půjčené</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Aktuálně půjčené položky s termíny -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Termíny vrácení
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.CurrentlyBorrowedItems.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Položka</th>
+                                        <th>Půjčeno komu</th>
+                                        <th>Datum půjčení</th>
+                                        <th>Dní</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CurrentlyBorrowedItems)
+                                    {
+                                        var daysBorrowed = item.BorrowDate.HasValue ? (DateTime.Now - item.BorrowDate.Value).Days : 0;
+                                        var alertClass = daysBorrowed > 30 ? "table-danger" : daysBorrowed > 14 ? "table-warning" : "";
+
+                                        <tr class="@alertClass">
+                                            <td>
+                                                <strong>@item.Title</strong>
+                                                <br>
+                                                <small class="text-muted">@item.Author</small>
+                                            </td>
+                                            <td>@item.BorrowerName</td>
+                                            <td>@item.BorrowDate?.ToString("dd.MM.yyyy")</td>
+                                            <td>
+                                                <span class="badge bg-@(daysBorrowed > 30 ? "danger" : daysBorrowed > 14 ? "warning" : "success")">
+                                                    @daysBorrowed dní
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted">
+                            <i class="fas fa-calendar-check fa-3x mb-3"></i>
+                            <p>Všechny položky jsou vrácené</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Rychlé akce
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a asp-controller="Items" asp-action="Create" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-plus fa-2x mb-2"></i><br>
+                                Přidat položku
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a asp-controller="Items" asp-action="Index" asp-route-showOnlyBorrowed="true"
+                               class="btn btn-outline-warning w-100">
+                                <i class="fas fa-hand-holding fa-2x mb-2"></i><br>
+                                Půjčené položky
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <button class="btn btn-outline-info w-100" onclick="refreshDashboard()">
+                                <i class="fas fa-sync fa-2x mb-2"></i><br>
+                                Obnovit data
+                            </button>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <button class="btn btn-outline-success w-100" onclick="exportData()">
+                                <i class="fas fa-download fa-2x mb-2"></i><br>
+                                Export dat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+@section Scripts {
+    <script>
+        // Dark Mode Toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            darkModeToggle.checked = true;
+        }
+
+        darkModeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        });
+
+        // Charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Media Type Chart
+            const mediaTypeCtx = document.getElementById('mediaTypeChart').getContext('2d');
+            const mediaTypeData = @Html.Raw(Json.Serialize(Model.ItemsByTypeData));
+
+            new Chart(mediaTypeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(mediaTypeData),
+                    datasets: [{
+                        data: Object.values(mediaTypeData),
+                        backgroundColor: [
+                            '#0d6efd', // Blue for books
+                            '#198754', // Green for CDs
+                            '#ffc107'  // Yellow for DVDs
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Borrowing Chart
+            const borrowingCtx = document.getElementById('borrowingChart').getContext('2d');
+
+            new Chart(borrowingCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dostupné', 'Půjčené'],
+                    datasets: [{
+                        label: 'Počet položek',
+                        data: [@Model.AvailableItems, @Model.BorrowedItems],
+                        backgroundColor: [
+                            '#198754', // Green for available
+                            '#ffc107'  // Yellow for borrowed
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+
+        // Functions
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        function exportData() {
+            alert('Export funkcionalita bude implementována v budoucí verzi.');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Index", "Dashboard")';
+            }
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Create", "Items")';
+            }
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Index", "Items")';
+            }
+        });
+
+        // Simple hover effects for cards
+        const statsCards = document.querySelectorAll('.card-stats');
+        statsCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '';
+            });
+        });
+    </script>
+
+    <style>
+        .card-stats {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+}

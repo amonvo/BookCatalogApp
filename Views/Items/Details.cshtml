@@ -1,0 +1,917 @@
+﻿@model BookCatalogApp.Models.Entities.Item
+@{
+    ViewData["Title"] = "Detail položky";
+}
+
+<div class="container-fluid">
+    <!-- Hlavička stránky - implementoval jsem breadcrumb navigaci -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1><i class="fas fa-info-circle me-2"></i>Detail položky</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Seznam položek</a></li>
+                    <li class="breadcrumb-item active">@Model.Title</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-1"></i>Upravit
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Zpět na seznam
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Levý panel - Vizuální obsah - navrhl jsem jako samostatnou sekci -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-image me-2"></i>Vizuální obsah
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Obrázek obálky - implementoval jsem s možností zvětšení -->
+                    <div class="mb-3 cover-image-wrapper">
+                        @if (Model.HasCoverImage)
+                        {
+                            <img src="@Model.CoverImagePath" alt="@Model.Title"
+                                 class="img-fluid rounded shadow cover-image-detail"
+                                 style="max-height: 300px; width: auto; cursor: pointer;"
+                                 onclick="enlargeImage('@Model.CoverImagePath', '@Model.Title')"
+                                 loading="lazy">
+                            <div class="image-info mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Obálka nastavena
+                                </small>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Placeholder pro chybějící obrázek -->
+                            <div class="no-cover-placeholder-detail">
+                                <i class="@Model.MediaType.IconClass fa-4x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">Žádný obrázek obálky</p>
+                                <small class="text-muted">Klikněte na tlačítka níže pro přidání</small>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Ovládací tlačítka pro obrázky - navrhl jsem intuitivní rozhraní -->
+                    <div class="mb-4">
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                    onclick="showImageUploadModal(@Model.Id)"
+                                    title="Nahrát obrázek ze souboru">
+                                <i class="fas fa-upload me-1"></i>Nahrát
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm"
+                                    onclick="showImageUrlModal(@Model.Id)"
+                                    title="Zadat URL adresu obrázku">
+                                <i class="fas fa-link me-1"></i>URL
+                            </button>
+                            @if (Model.HasCoverImage)
+                            {
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                        onclick="removeCoverImage(@Model.Id)"
+                                        title="Odstranit současný obrázek">
+                                    <i class="fas fa-trash me-1"></i>Odstranit
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- QR kód sekce - implementoval jsem generování a zobrazení -->
+                    <hr>
+                    <h6><i class="fas fa-qrcode me-1"></i>QR kód pro rychlé vyhledání</h6>
+                    @if (!string.IsNullOrEmpty(Model.QRCode))
+                    {
+                        <div class="mb-3">
+                            <div class="qr-code-container">
+                                <img src="@Model.QRCode" alt="QR Code pro @Model.Title"
+                                     class="img-fluid qr-code-image"
+                                     style="max-width: 150px; border: 2px solid #e9ecef; border-radius: 8px;">
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-mobile-alt me-1"></i>Naskenujte pro rychlé vyhledání
+                            </small>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-outline-success btn-sm me-1"
+                                        onclick="downloadQRCode('@Model.QRCode', '@Model.Title')"
+                                        title="Stáhnout QR kód">
+                                    <i class="fas fa-download me-1"></i>Stáhnout
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        onclick="regenerateQRCode(@Model.Id)"
+                                        title="Vygenerovat nový QR kód">
+                                    <i class="fas fa-sync me-1"></i>Obnovit
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Stav bez QR kódu -->
+                        <div class="mb-3">
+                            <div class="no-qr-placeholder">
+                                <i class="fas fa-qrcode fa-3x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">QR kód nebyl vygenerován</p>
+                                <small class="text-muted">Vygenerujte pro rychlé vyhledání položky</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm w-100"
+                                onclick="generateQRCode(@Model.Id)">
+                            <i class="fas fa-qrcode me-1"></i>Vygenerovat QR kód
+                        </button>
+                    }
+
+                    <!-- Metadata sekce - přidal jsem dodatečné informace -->
+                    <hr>
+                    <div class="metadata-section">
+                        <h6><i class="fas fa-info me-1"></i>Metadata</h6>
+                        <div class="row text-start">
+                            <div class="col-12 mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-hashtag me-1"></i><strong>ID:</strong> @Model.Id
+                                </small>
+                            </div>
+                            <div class="col-12 mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-plus me-1"></i><strong>Vytvořeno:</strong>
+                                    @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                                </small>
+                            </div>
+                            @if (Model.HasCoverImage)
+                            {
+                                <div class="col-12 mb-2">
+                                    <small class="text-success">
+                                        <i class="fas fa-image me-1"></i><strong>Obálka:</strong> Nastavena
+                                    </small>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.QRCode))
+                            {
+                                <div class="col-12 mb-2">
+                                    <small class="text-success">
+                                        <i class="fas fa-qrcode me-1"></i><strong>QR kód:</strong> Vygenerován
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pravý panel - Hlavní informace - přepracoval jsem layout -->
+        <div class="col-lg-8">
+            <!-- Základní informace o položce -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badge bg-@Model.MediaType.ColorClass fs-6">
+                        <i class="@Model.MediaType.IconClass me-2"></i>@Model.MediaType.Name
+                    </span>
+                    @if (Model.IsBorrowed)
+                    {
+                        <span class="badge bg-warning text-dark fs-6">
+                            <i class="fas fa-hand-holding me-1"></i>Půjčeno
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-check me-1"></i>Dostupné
+                        </span>
+                    }
+                </div>
+                <div class="card-body">
+                    <!-- Název položky - hlavní nadpis -->
+                    <h2 class="card-title mb-4 text-primary">@Model.Title</h2>
+
+                    <!-- Informační řádky - strukturoval jsem přehledně -->
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong><i class="fas fa-user me-1"></i>Autor/Režisér:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            <span class="@(string.IsNullOrEmpty(Model.Author) ? "text-muted" : "")">
+                                @(string.IsNullOrEmpty(Model.Author) ? "Neuvedeno" : Model.Author)
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (Model.PurchaseDate.HasValue)
+                    {
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong><i class="fas fa-calendar me-1"></i>Datum pořízení:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <span class="text-info">
+                                    @Model.PurchaseDate.Value.ToString("dd.MM.yyyy")
+                                    <small class="text-muted">
+                                        (@((DateTime.Now - Model.PurchaseDate.Value).Days) dní v evidenci)
+                                    </small>
+                                </span>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong><i class="fas fa-clock me-1"></i>Přidáno do systému:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            <span class="text-muted">
+                                @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Popis položky -->
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong><i class="fas fa-align-left me-1"></i>Popis:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <div class="description-box p-3 bg-light rounded">
+                                    <p class="mb-0">@Model.Description</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Panel půjčování - zachoval jsem původní funkcionalitu -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Správa půjčování
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.IsBorrowed)
+                    {
+                        <!-- Stav půjčeno - implementoval jsem barevné označení -->
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-user-clock me-1"></i>Položka je aktuálně půjčená
+                            </h6>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Půjčeno komu:</strong><br>
+                                        <span class="fs-5 text-dark">@Model.BorrowerName</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Datum půjčení:</strong><br>
+                                        <span class="text-muted">@Model.BorrowDate?.ToString("dd.MM.yyyy")</span>
+                                        @if (Model.BorrowDate.HasValue)
+                                        {
+                                            var daysBorrowed = (DateTime.Now - Model.BorrowDate.Value).Days;
+                                            <br>
+
+                                            <small class="@(daysBorrowed > 30 ? "text-danger" : daysBorrowed > 14 ? "text-warning" : "text-success")">
+                                                (@daysBorrowed dní)
+                                            </small>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulář pro vrácení -->
+                        <form asp-action="Return" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success btn-lg w-100"
+                                    onclick="return confirm('Opravdu chcete vrátit položku \'' + '@Model.Title' + '\'?')">
+                                <i class="fas fa-undo me-2"></i>Vrátit položku
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <!-- Stav dostupné - formulář pro půjčení -->
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-check-circle me-1"></i>Položka je dostupná k půjčení
+                            </h6>
+                            <p class="mb-0">Tuto položku můžete půjčit zadáním jména půjčujícího.</p>
+                        </div>
+
+                        <form asp-action="Borrow" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label for="borrowerName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Jméno půjčujícího:
+                                </label>
+                                <input type="text" name="borrowerName" id="borrowerName"
+                                       class="form-control form-control-lg" required
+                                       placeholder="Zadejte celé jméno osoby..."
+                                       autocomplete="name">
+                                <div class="form-text">
+                                    Zadejte celé jméno osoby, které položku půjčujete
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-lg w-100">
+                                <i class="fas fa-hand-holding me-2"></i>Půjčit položku
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modály - implementoval jsem kompletní UI pro správu obrázků -->
+<!-- Modal pro upload obrázku ze souboru -->
+<div class="modal fade" id="imageUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>Nahrát obrázek obálky
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Drag & Drop oblast - implementoval jsem moderní UX -->
+                <div class="drag-drop-area" id="dragDropArea">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                    <p class="mb-2">Přetáhněte obrázek sem nebo klikněte pro výběr</p>
+                    <small class="text-muted">Podporované formáty: JPG, PNG, GIF, WebP (max. 5MB)</small>
+                </div>
+
+                <form id="imageUploadForm" enctype="multipart/form-data" class="mt-3">
+                    <input type="file" class="form-control d-none" id="coverImageFile"
+                           accept="image/*" required>
+                </form>
+
+                <!-- Náhled obrázku -->
+                <div id="imagePreview" class="mt-3" style="display: none;">
+                    <h6>Náhled:</h6>
+                    <img id="previewImage" class="img-fluid rounded shadow"
+                         alt="Náhled" style="max-height: 200px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                <button type="button" class="btn btn-primary" onclick="uploadImage()" id="uploadBtn" disabled>
+                    <i class="fas fa-upload me-1"></i>Nahrát obrázek
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pro zadání URL obrázku -->
+<div class="modal fade" id="imageUrlModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-link me-2"></i>URL adresa obrázku obálky
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="imageUrlForm">
+                    <div class="mb-3">
+                        <label for="imageUrl" class="form-label">URL adresa obrázku:</label>
+                        <input type="url" class="form-control" id="imageUrl"
+                               placeholder="https://example.com/obrazek.jpg nebo /uploads/covers/obrazek.jpg"
+                               required>
+                        <div class="form-text">
+                            Zadejte URL adresu obrázku z internetu nebo cestu k lokálnímu souboru
+                        </div>
+                    </div>
+
+                    <!-- Rychlé příklady URL - přidal jsem pro usnadnění -->
+                    <div class="mb-3">
+                        <small class="text-muted">Příklady:</small>
+                        <div class="example-urls mt-2">
+                            <code class="d-block mb-1">/uploads/covers/1984George Orwell.jpg</code>
+                            <code class="d-block">https://covers.openlibrary.org/b/title/1984-L.jpg</code>
+                        </div>
+                    </div>
+
+                    <!-- Náhled URL obrázku -->
+                    <div id="urlImagePreview" class="mb-3" style="display: none;">
+                        <h6>Náhled:</h6>
+                        <img id="urlPreviewImage" class="img-fluid rounded shadow"
+                             alt="Náhled" style="max-height: 200px;">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                <button type="button" class="btn btn-primary" onclick="setImageUrl()">
+                    <i class="fas fa-save me-1"></i>Uložit URL
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pro zvětšení obrázku - lightbox efekt -->
+<div class="modal fade" id="imageEnlargeModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="enlargeModalTitle">Obrázek obálky</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="enlargedImage" class="img-fluid" alt="Zvětšený obrázek">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-primary" onclick="downloadImage()">
+                    <i class="fas fa-download me-1"></i>Stáhnout
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavřít</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notifikace - zachoval jsem systém zpětné vazby -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong class="me-auto">Úspěch</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">@TempData["SuccessMessage"]</div>
+        </div>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-danger text-white">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong class="me-auto">Chyba</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">@TempData["ErrorMessage"]</div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Globální proměnná pro aktuální položku - potřebuji pro AJAX volání
+        let currentItemId = @Model.Id;
+
+        // Inicializace stránky - nastavil jsem event listenery
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-hide toast zpráv
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                setTimeout(function() {
+                    var bsToast = new bootstrap.Toast(toast);
+                    bsToast.hide();
+                }, 5000);
+            });
+
+            // Automatické zaměření na pole pro jméno půjčujícího
+            var borrowerInput = document.getElementById('borrowerName');
+            if (borrowerInput) {
+                borrowerInput.focus();
+            }
+
+            // Inicializace drag & drop pro upload
+            initializeDragAndDrop();
+        });
+
+        // Drag & Drop funkcionalita - implementoval jsem moderní UX
+        function initializeDragAndDrop() {
+            const dragDropArea = document.getElementById('dragDropArea');
+            const fileInput = document.getElementById('coverImageFile');
+
+            if (!dragDropArea || !fileInput) return;
+
+            // Kliknutí na oblast otevře file dialog
+            dragDropArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Drag & Drop events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dragDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Vizuální feedback pro drag & drop
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dragDropArea.addEventListener(eventName, () => {
+                    dragDropArea.classList.add('drag-over');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dragDropArea.addEventListener(eventName, () => {
+                    dragDropArea.classList.remove('drag-over');
+                });
+            });
+
+            // Zpracování drop události
+            dragDropArea.addEventListener('drop', handleDrop);
+
+            function handleDrop(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect(files[0]);
+                }
+            }
+        }
+
+        // Zobrazení upload modalu
+        function showImageUploadModal(itemId) {
+            currentItemId = itemId;
+            const modal = new bootstrap.Modal(document.getElementById('imageUploadModal'));
+            modal.show();
+        }
+
+        // Zobrazení URL modalu
+        function showImageUrlModal(itemId) {
+            currentItemId = itemId;
+            // Předvyplnění aktuální URL pokud existuje
+            const currentUrl = '@(Model.CoverImageUrl ?? "")';
+            if (currentUrl) {
+                document.getElementById('imageUrl').value = currentUrl;
+                // Zobrazit náhled
+                showUrlPreview(currentUrl);
+            }
+            const modal = new bootstrap.Modal(document.getElementById('imageUrlModal'));
+            modal.show();
+        }
+
+        // Zpracování výběru souboru - implementoval jsem validaci
+        document.getElementById('coverImageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileSelect(file);
+            }
+        });
+
+        function handleFileSelect(file) {
+            // Validace typu souboru
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Nepodporovaný formát souboru. Povolené formáty: JPG, PNG, GIF, WebP');
+                return;
+            }
+
+            // Validace velikosti (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Soubor je příliš velký. Maximální velikost je 5MB.');
+                return;
+            }
+
+            // Zobrazení náhledu
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('uploadBtn').disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Náhled URL obrázku
+        document.getElementById('imageUrl').addEventListener('blur', function() {
+            const url = this.value.trim();
+            if (url) {
+                showUrlPreview(url);
+            }
+        });
+
+        function showUrlPreview(url) {
+            const img = document.getElementById('urlPreviewImage');
+            const preview = document.getElementById('urlImagePreview');
+
+            img.onload = function() {
+                preview.style.display = 'block';
+            };
+
+            img.onerror = function() {
+                preview.style.display = 'none';
+            };
+
+            img.src = url;
+        }
+
+        // Upload obrázku na server - AJAX implementace
+        function uploadImage() {
+            const formData = new FormData();
+            const fileInput = document.getElementById('coverImageFile');
+
+            if (!fileInput.files[0]) {
+                alert('Prosím vyberte soubor.');
+                return;
+            }
+
+            // Zobrazení loading indikátoru
+            const uploadBtn = document.getElementById('uploadBtn');
+            const originalText = uploadBtn.innerHTML;
+            uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Nahrávám...';
+            uploadBtn.disabled = true;
+
+            formData.append('coverImage', fileInput.files[0]);
+            formData.append('itemId', currentItemId);
+
+            fetch('/Items/UploadCoverImage', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Úspěch - reload stránky pro zobrazení nového obrázku
+                    location.reload();
+                } else {
+                    alert('Chyba při nahrávání: ' + data.message);
+                    uploadBtn.innerHTML = originalText;
+                    uploadBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert('Chyba při nahrávání: ' + error);
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
+            });
+        }
+
+        // Nastavení URL obrázku
+        function setImageUrl() {
+            const imageUrl = document.getElementById('imageUrl').value.trim();
+
+            if (!imageUrl) {
+                alert('Prosím zadejte URL adresu obrázku.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('itemId', currentItemId);
+            formData.append('imageUrl', imageUrl);
+
+            fetch('/Items/SetCoverImageUrl', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Chyba při nastavování URL: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Chyba při nastavování URL: ' + error);
+            });
+        }
+
+        // Odstranění obrázku obálky
+        function removeCoverImage(itemId) {
+            if (!confirm('Opravdu chcete odstranit obrázek obálky?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('itemId', itemId);
+            formData.append('imageUrl', ''); // Prázdná URL = odstranění
+
+            fetch('/Items/SetCoverImageUrl', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Chyba při odstraňování obrázku: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Chyba při odstraňování obrázku: ' + error);
+            });
+        }
+
+        // Generování QR kódu
+        function generateQRCode(itemId) {
+            const formData = new FormData();
+            formData.append('itemId', itemId);
+
+            fetch('/Items/GenerateQRCode', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Chyba při generování QR kódu: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Chyba při generování QR kódu: ' + error);
+            });
+        }
+
+        // Regenerování QR kódu
+        function regenerateQRCode(itemId) {
+            if (confirm('Opravdu chcete vygenerovat nový QR kód?')) {
+                generateQRCode(itemId);
+            }
+        }
+
+        // Zvětšení obrázku - lightbox efekt
+        function enlargeImage(imageSrc, title) {
+            document.getElementById('enlargedImage').src = imageSrc;
+            document.getElementById('enlargeModalTitle').textContent = 'Obálka: ' + title;
+            const modal = new bootstrap.Modal(document.getElementById('imageEnlargeModal'));
+            modal.show();
+        }
+
+        // Stažení QR kódu
+        function downloadQRCode(qrCodeUrl, title) {
+            const link = document.createElement('a');
+            link.href = qrCodeUrl;
+            link.download = 'QR_kod_' + title.replace(/[^a-z0-9]/gi, '_') + '.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Stažení obrázku obálky
+        function downloadImage() {
+            const img = document.getElementById('enlargedImage');
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = 'obalka_@(Model.Title.Replace(" ", "_")).jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Simple hover efekty pro karty - použil jsem JavaScript místo CSS animací
+        document.addEventListener('DOMContentLoaded', function() {
+            const coverImage = document.querySelector('.cover-image-detail');
+            if (coverImage) {
+                coverImage.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.02)';
+                    this.style.boxShadow = '0 8px 25px rgba(13, 110, 253, 0.15)';
+                    this.style.borderColor = '#0d6efd';
+                });
+
+                coverImage.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.boxShadow = '';
+                    this.style.borderColor = '#e9ecef';
+                });
+            }
+
+            // Drag & drop visual feedback
+            const dragArea = document.getElementById('dragDropArea');
+            if (dragArea) {
+                dragArea.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = 'rgba(13, 110, 253, 0.05)';
+                    this.style.borderColor = '#0d6efd';
+                });
+
+                dragArea.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '#fafafa';
+                    this.style.borderColor = '#ced4da';
+                });
+            }
+        });
+    </script>
+
+    <!-- Jednoduché CSS styly bez keyframes -->
+    <style>
+        /* Základní styly pro obrázky obálek */
+        .cover-image-detail {
+            border: 3px solid #e9ecef;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+
+        /* Placeholder pro chybějící obrázek */
+        .no-cover-placeholder-detail {
+            height: 250px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px dashed #ced4da;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+            .no-cover-placeholder-detail:hover {
+                background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+                border-color: #adb5bd;
+            }
+
+        /* QR kód kontejner */
+        .qr-code-container {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+
+        .qr-code-image {
+            transition: transform 0.3s ease;
+        }
+
+            .qr-code-image:hover {
+                transform: scale(1.05);
+            }
+
+        /* No QR placeholder */
+        .no-qr-placeholder {
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        /* Drag & Drop oblast */
+        .drag-drop-area {
+            border: 3px dashed #ced4da;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        /* Popis položky */
+        .description-box {
+            border-left: 4px solid #0d6efd;
+        }
+
+        /* Metadata sekce */
+        .metadata-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* Příklady URL */
+        .example-urls code {
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+            .example-urls code:hover {
+                background: #e9ecef;
+            }
+
+        /* Image info */
+        .image-info {
+            font-size: 0.85rem;
+        }
+
+        /* Breadcrumb styly */
+        .breadcrumb {
+            background: none;
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+}
